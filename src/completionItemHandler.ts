@@ -15,7 +15,7 @@ export const provideCompletionItems = (
   const lineText = document.lineAt(position).text
 
   // 定义何时出现
-  if (lineText.match(/string|int|float|complex|bool|interface|byte|rune|error/)) {
+  if (lineText.match(/(string|int|float|complex|bool|interface|byte|rune|error).*`.*`/)) {
     const lineSlice = lineText.substring(0, position.character).trim().split(/\s+/)
     const param = lineSlice[0]
 
