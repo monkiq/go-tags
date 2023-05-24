@@ -2,12 +2,12 @@
   "name": "go-tags",
   "displayName": "Go Tags",
   "description": "Add tags for struct in Go",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "engines": {
     "vscode": "^1.72.0"
   },
   "categories": [
-    "Snippets"
+    "Other"
   ],
   "activationEvents": [
     "onLanguage:go"
@@ -23,25 +23,6 @@
     "url": "https://github.com/whosydd/go-tags.git"
   },
   "main": "./dist/extension.js",
-  "contributes": {
-    "commands": [],
-    "configuration": [
-      {
-        "title": "associations",
-        "properties": {
-          "go-tags.associations": {
-            "type": "array",
-            "scope": "language-overridable",
-            "default": [
-              "json",
-              "xml",
-              "yaml"
-            ]
-          }
-        }
-      }
-    ]
-  },
   "scripts": {
     "vsce:package": "pnpm vsce package --no-dependencies",
     "vsce:publish": "pnpm vsce publish --no-dependencies",
