@@ -1,9 +1,14 @@
 import * as vscode from 'vscode'
-import showWhatsNew from './showWhatsNew'
+import showWhatsNew, { Version } from './showWhatsNew'
 
 export async function activate(context: vscode.ExtensionContext) {
   // 显示新内容
-  showWhatsNew(context)
+  showWhatsNew(context, {
+    extensionId: 'whosydd.go-tags',
+    title: 'Go Tags 0.2.0 NEW!',
+    detail: "Now need to use QuickFix to add tags.\nCheck Extension's detail for more information.",
+    version: Version.minor,
+  })
 
   const addTagsProvider = new AddTagsProvider()
   const codeAction = vscode.languages.registerCodeActionsProvider('go', addTagsProvider, {
