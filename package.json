@@ -23,6 +23,23 @@
     "url": "https://github.com/whosydd/go-tags.git"
   },
   "main": "./dist/extension.js",
+  "contributes": {
+    "configuration": [
+      {
+        "title": "Go tags",
+        "properties": {
+          "go-tags.cases": {
+            "type": "object",
+            "default": {
+              "json": "camel",
+              "yaml": "snake"
+            },
+            "description": "Supported: snake, camel, pascal, constant, none"
+          }
+        }
+      }
+    ]
+  },
   "scripts": {
     "vsce:package": "pnpm vsce package --no-dependencies",
     "vsce:publish": "pnpm vsce publish --no-dependencies",
@@ -51,6 +68,10 @@
     "ts-loader": "^9.4.1",
     "typescript": "^4.8.4",
     "webpack": "^5.74.0",
-    "webpack-cli": "^4.10.0"
+    "webpack-cli": "^4.10.0",
+    "camel-case": "^4.1.2",
+    "constant-case": "^3.0.4",
+    "pascal-case": "^3.1.2",
+    "snake-case": "^3.0.4"
   }
 }

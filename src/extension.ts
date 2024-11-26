@@ -1,7 +1,10 @@
 import * as vscode from 'vscode'
 import showWhatsNew, { Version } from './showWhatsNew'
+import { casedName, configCases } from './cases'
+import * as config from './config'
 
 export async function activate(context: vscode.ExtensionContext) {
+  config.init()
   // 显示新内容
   showWhatsNew(context, {
     extensionId: 'whosydd.go-tags',
@@ -19,7 +22,9 @@ export async function activate(context: vscode.ExtensionContext) {
 }
 
 // This method is called when your extension is deactivated
-export function deactivate() {}
+export function deactivate(context: vscode.ExtensionContext) {
+  config.disposable()
+}
 
 class AddTagsProvider implements vscode.CodeActionProvider {
   static readonly providedCodeActionKinds = [vscode.CodeActionKind.QuickFix]
@@ -32,6 +37,7 @@ class AddTagsProvider implements vscode.CodeActionProvider {
     if (this.isShowAddTags(document, range)) {
       return [
         new vscode.CodeAction(`Add JSON Tag`, vscode.CodeActionKind.QuickFix),
+        new vscode.CodeAction(`Add YAML Tag`, vscode.CodeActionKind.QuickFix),
         new vscode.CodeAction(`Add Tags`, vscode.CodeActionKind.QuickFix),
         new vscode.CodeAction(`Remove Tags`, vscode.CodeActionKind.QuickFix),
       ]
@@ -46,9 +52,7 @@ class AddTagsProvider implements vscode.CodeActionProvider {
     token: vscode.CancellationToken
   ): vscode.ProviderResult<vscode.CodeAction> {
     const editor = vscode.window.activeTextEditor!
-
-    // add json tag
-    if (codeAction.title === 'Add JSON Tag') {
+    const addTag = (tagName: string) => {
       vscode.commands
         .executeCommand('vscode.executeDocumentSymbolProvider', editor.document.uri)
         .then((obj: any) => {
@@ -57,14 +61,32 @@ class AddTagsProvider implements vscode.CodeActionProvider {
               (item: vscode.SymbolInformation) => item.name === this.structAtLine
             )
             structs[0].children.forEach((item: any) => {
-              editBuilder.insert(
-                new vscode.Position(item.range.end.c, item.range.end.e),
-                ' `' + `json:"${item.name.toLowerCase()}"` + '`'
-              )
+              const line = editor.document.lineAt(item.range.end.c)
+              const tag = `${tagName}:"${casedName(item.name, tagName)}"`
+              if (line.text.match(/`\w.*:".*`/)) {
+                if (tagName === 'json') {
+                  const existingTags = line.text.match(/`(.*)`/)![1]
+                  const newTags = `json:"${casedName(item.name, 'json')}" ${existingTags}`
+                  editBuilder.replace(line.range, line.text.replace(/`.*`/, `\`${newTags}\``))
+                } else {
+                  editBuilder.insert(
+                    new vscode.Position(item.range.end.c, item.range.end.e - 1),
+                    ' ' + tag
+                  )
+                }
+              } else {
+                editBuilder.insert(
+                  new vscode.Position(item.range.end.c, item.range.end.e),
+                  ' `' + tag + '`'
+                )
+              }
             })
           })
         })
     }
+    // add json/yaml tag
+    if (codeAction.title === 'Add JSON Tag') addTag('json')
+    if (codeAction.title === 'Add YAML Tag') addTag('yaml')
 
     // add Tags
     if (codeAction.title === 'Add Tags') {
@@ -114,10 +136,28 @@ class AddTagsProvider implements vscode.CodeActionProvider {
     // Add Omitempty
     if (codeAction.title === 'Add Omitempty') {
       const editor = vscode.window.activeTextEditor!
+      const selects = editor.selections
+      console.log('selects:', selects)
       editor.edit(editBuilder => {
-        const selects = editor.selections
-        console.log('selects:', selects)
-        editor.selections.forEach(position => editBuilder.insert(position.active, ',omitempty'))
+        editor.selections.forEach(position => {
+          const line = editor.document.lineAt(position.active.line)
+          const match = line.text.match(/`(.*)`/)
+          if (match) {
+            const tags = match[1].split(' ')
+            const jsonTagIndex = tags.findIndex(tag => tag.startsWith('json:'))
+            if (jsonTagIndex !== -1) {
+              tags[jsonTagIndex] = tags[jsonTagIndex].replace(/"$/, ',omitempty"')
+              editBuilder.replace(line.range, line.text.replace(/`.*`/, `\`${tags.join(' ')}\``))
+            } else {
+              const vars = line.text.trim().split(/\s+/)
+              const newTag = `json:"${vars[0]},omitempty"`
+              editBuilder.replace(
+                line.range,
+                line.text.replace(/`.*`/, `\`${newTag} ${match[1]}\``)
+              )
+            }
+          }
+        })
       })
     }
 
